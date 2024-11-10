@@ -4,6 +4,8 @@ package handlers
 import (
 	"errors"
 	"github.com/FollowLille/loyalty/internal/auth"
+	"github.com/FollowLille/loyalty/internal/config"
+	"go.uber.org/zap"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +34,7 @@ func Register(c *gin.Context) {
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
+		config.Logger.Error("Failed to hash password", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	}
@@ -39,14 +42,23 @@ func Register(c *gin.Context) {
 	err = database.CreateUser(user.Username, string(hashedPassword))
 	if err != nil {
 		if errors.Is(err, cstmerr.ErrorUserAlreadyExists) {
+			config.Logger.Warn("User already exists", zap.String("user", user.Username))
 			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
 			return
 		}
+		config.Logger.Error("Failed to create user", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Successful registration"})
+	token, err := auth.GenerateToken(user.Username)
+	if err != nil {
+		config.Logger.Error("Failed to generate token", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token, "message": "Successful registration"})
 }
 
 // Login обрабатывает POST-запрос на вход в систему лояльности.
@@ -64,6 +76,7 @@ func Login(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&loginData); err != nil {
+		config.Logger.Error("Failed to bind JSON", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -71,21 +84,25 @@ func Login(c *gin.Context) {
 	user, err := database.GetUserPasswordHash(loginData.Username)
 	if err != nil {
 		if errors.Is(err, cstmerr.ErrorUserDoesNotExist) {
+			config.Logger.Warn("User does not exist", zap.String("user", loginData.Username))
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 			return
 		}
+		config.Logger.Error("Failed to get user password hash", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user), []byte(loginData.Password))
 	if err != nil {
+		config.Logger.Error("Failed to compare hash and password", zap.Error(err))
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
 
 	token, err := auth.GenerateToken(loginData.Username)
 	if err != nil {
+		config.Logger.Error("Failed to generate token", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
