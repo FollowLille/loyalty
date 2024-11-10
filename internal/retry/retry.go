@@ -1,12 +1,14 @@
 package retry
 
 import (
-	"github.com/FollowLille/loyalty/internal/config"
 	"go.uber.org/zap"
 	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
+
+	"github.com/FollowLille/loyalty/internal/config"
+	cstmerr "github.com/FollowLille/loyalty/internal/errors"
 )
 
 func Retry(f func() error) error {
@@ -17,7 +19,7 @@ func Retry(f func() error) error {
 		if err == nil {
 			return nil
 		}
-		if err == ErrorNonRetriable || err == ErrorNonRetriablePostgres {
+		if err == cstmerr.ErrorNonRetriable || err == cstmerr.ErrorNonRetriablePostgres {
 			return err
 		}
 		config.Logger.Info("Retrying after delay", zap.Duration("delay", delay))

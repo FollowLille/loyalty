@@ -26,7 +26,7 @@ import (
 //   - bool: true, если пользователь существует; false в противном случае.
 //   - error: ошибка, если произошла ошибка при выполнении запроса.
 func IsUserExists(name string) (bool, error) {
-	query := "SELECT EXISTS (SELECT 1 FROM users WHERE name = $1)"
+	query := "SELECT EXISTS (SELECT 1 FROM loyalty.users WHERE name = $1)"
 	var exists bool
 	err := QueryRowWithRetry(context.Background(), DB, query, name, &exists)
 	if err != nil {

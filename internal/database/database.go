@@ -3,16 +3,23 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	"github.com/FollowLille/loyalty/internal/config"
 
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
+
+	"github.com/FollowLille/loyalty/internal/config"
 )
 
 // DB хранит глобальное соединение с базой данных.
 var DB *sql.DB
+
+type DBHandler interface {
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+}
 
 // InitDB инициализирует соединение с базой данных.
 // Если произошла ошибка при инициализации, программа завершается с кодом ошибки.
