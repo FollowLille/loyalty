@@ -101,5 +101,8 @@ func ValidateUserPassword(name, password string) error {
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
+	if err != nil {
+		return err
+	}
 	return nil
 }
