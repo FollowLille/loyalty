@@ -8,11 +8,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/FollowLille/loyalty/internal/config"
-	"golang.org/x/crypto/bcrypt"
 
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 
+	"github.com/FollowLille/loyalty/internal/config"
 	cstmerr "github.com/FollowLille/loyalty/internal/errors"
 )
 

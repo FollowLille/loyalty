@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/FollowLille/loyalty/internal/config"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +12,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/FollowLille/loyalty/internal/app/handlers"
+	"github.com/FollowLille/loyalty/internal/app/middleware"
+	"github.com/FollowLille/loyalty/internal/config"
 	"github.com/FollowLille/loyalty/internal/database"
 )
 
@@ -43,15 +44,15 @@ func main() {
 		public.POST("/login", handlers.Login)
 	}
 
-	//protected := router.Group("/api/user")
-	//protected.Use(middleware.AuthMiddleware())
-	//{
-	//	protected.POST("/orders", handlers.UploadOrder)
-	//	protected.GET("/orders", handlers.GetOrders)
-	//	protected.GET("/balance", handlers.GetBalance)
-	//	protected.POST("/balance/withdraw", handlers.Withdraw)
-	//	protected.GET("/withdrawals", handlers.GetWithdrawals)
-	//}
+	protected := router.Group("/api/user")
+	protected.Use(middleware.AuthMiddleware())
+	{
+		protected.POST("/orders", handlers.UploadOrder)
+		protected.GET("/orders", handlers.GetOrders)
+		protected.GET("/balance", handlers.GetBalance)
+		protected.POST("/balance/withdraw", handlers.GetWithdrawRequest)
+		protected.GET("/withdrawals", handlers.GetWithdrawals)
+	}
 
 	config.Logger.Info("Starting server...", zap.String("address", flagAddress))
 	router.Run(flagAddress)

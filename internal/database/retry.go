@@ -5,11 +5,11 @@ package database
 import (
 	"context"
 	"database/sql"
-	"github.com/FollowLille/loyalty/internal/config"
 
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 
+	"github.com/FollowLille/loyalty/internal/config"
 	cstmerr "github.com/FollowLille/loyalty/internal/errors"
 	"github.com/FollowLille/loyalty/internal/retry"
 )
@@ -18,6 +18,10 @@ import (
 // Используется как для sql.DB, так и для sql.Tx.
 type ExecContexter interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+}
+
+type QueryRowContexter interface {
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }
 
 // ExecQueryWithRetry выполняет SQL-запрос, не возвращающий результат, с повторными попытками при возникновении ошибок.
@@ -62,7 +66,7 @@ func ExecQueryWithRetry(ctx context.Context, db ExecContexter, query string, arg
 //
 // Возвращает:
 //   - error: ошибка, если произошла ошибка при выполнении запроса.
-func QueryRowWithRetry(ctx context.Context, db *sql.DB, query string, dest ...interface{}) error {
+func QueryRowWithRetry(ctx context.Context, db QueryRowContexter, query string, dest ...interface{}) error {
 	err := retry.Retry(func() error {
 		err := db.QueryRowContext(ctx, query).Scan(dest...)
 		if err != nil {
@@ -70,7 +74,7 @@ func QueryRowWithRetry(ctx context.Context, db *sql.DB, query string, dest ...in
 				config.Logger.Error("Retrying query")
 				return cstmerr.ErrorRetriablePostgres
 			}
-			config.Logger.Error("Non retriable error during query execution", zap.Error(err))
+			config.Logger.Error("Non-retriable error during query execution", zap.Error(err))
 			return cstmerr.ErrorNonRetriablePostgres
 		}
 		return nil

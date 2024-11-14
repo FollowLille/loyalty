@@ -1,16 +1,17 @@
 // Package handlers предоставляет функции для обработки запросов на взаимодействие с программой лояльности
+// Включает в себя функции для обработки запросов на регистрацию и вход пользователя
 package handlers
 
 import (
 	"errors"
-	"github.com/FollowLille/loyalty/internal/auth"
-	"github.com/FollowLille/loyalty/internal/config"
-	"go.uber.org/zap"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/FollowLille/loyalty/internal/auth"
+	"github.com/FollowLille/loyalty/internal/config"
 	"github.com/FollowLille/loyalty/internal/database"
 	cstmerr "github.com/FollowLille/loyalty/internal/errors"
 )
