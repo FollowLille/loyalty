@@ -1,6 +1,6 @@
 module github.com/FollowLille/loyalty
 
-go 1.23.3
+go 1.22.5
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
