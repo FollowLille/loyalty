@@ -52,13 +52,13 @@ func InitDB(connStr string) error {
 func PrepareDB() error {
 	var err error
 
-	if err = CreateStatusDictionary(); err != nil {
-		config.Logger.Fatal("Failed to create status dictionary", zap.Error(err))
+	if err = CreateSchema(); err != nil {
+		config.Logger.Fatal("Failed to create schema", zap.Error(err))
 		return err
 	}
 
-	if err = CreateSchema(); err != nil {
-		config.Logger.Fatal("Failed to create schema", zap.Error(err))
+	if err = CreateStatusDictionary(); err != nil {
+		config.Logger.Fatal("Failed to create status dictionary", zap.Error(err))
 		return err
 	}
 
