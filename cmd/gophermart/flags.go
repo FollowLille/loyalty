@@ -25,14 +25,14 @@ var (
 //
 // Пример использования:
 //
-//	-address=localhost:8080
+//	-address=127.0.0.1:8080
 //	-database=postgres://user:password@localhost/dbname
 //	-accrual-address=http://localhost:8081
 //	-log-level=debug
 //
 // После парсинга флагов, информация о них логируется с использованием zap.
 func parseFlags() {
-	pflag.StringVarP(&flagAddress, "address", "a", "localhost:8080", "Server address")
+	pflag.StringVarP(&flagAddress, "address", "a", "127.0.0.1:8080", "Server address")
 	pflag.StringVarP(&flagDatabaseAddress, "database", "d", "", "Database address")
 	pflag.StringVarP(&flagAccuralAddress, "accrual-address", "r", "http://localhost:8081", "Accrual system address")
 	pflag.StringVarP(&flagLogLevel, "log-level", "l", "info", "Log level")
