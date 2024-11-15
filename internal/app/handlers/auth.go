@@ -59,7 +59,8 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token, "message": "Successful registration"})
+	c.Header("Authorization", "Bearer "+token)
+	c.JSON(http.StatusOK, gin.H{"message": "Successful registration"})
 }
 
 // Login обрабатывает POST-запрос на вход в систему лояльности.
@@ -107,8 +108,6 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Successful login",
-		"token":   token,
-	})
+	c.Header("Authorization", "Bearer "+token)
+	c.JSON(http.StatusOK, gin.H{"message": "Successful login"})
 }
