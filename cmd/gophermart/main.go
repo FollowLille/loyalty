@@ -13,6 +13,7 @@ import (
 
 	"github.com/FollowLille/loyalty/internal/app/handlers"
 	"github.com/FollowLille/loyalty/internal/app/middleware"
+	"github.com/FollowLille/loyalty/internal/compress"
 	"github.com/FollowLille/loyalty/internal/config"
 	"github.com/FollowLille/loyalty/internal/database"
 )
@@ -37,6 +38,7 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Recovery(), config.RequestLogger(), config.ResponseLogger())
+	router.Use(compress.GzipMiddleware()).Use(compress.GzipResponseMiddleware())
 
 	public := router.Group("/api/user")
 	{
@@ -54,6 +56,7 @@ func main() {
 		protected.GET("/withdrawals", handlers.GetWithdrawals)
 	}
 
+	config.Logger.Info("Starting server...")
 	config.Logger.Info("Starting server...", zap.String("address", flagAddress))
 	router.Run(flagAddress)
 }

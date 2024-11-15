@@ -33,9 +33,14 @@ func FetchUserBalance(userID int64) (float64, float64, error) {
 	var currentBalance float64
 	var totalWithdrawn float64
 
-	err := QueryRowWithRetry(context.Background(), DB, query, userID, &currentBalance, &totalWithdrawn)
+	row, err := QueryRowWithRetry(context.Background(), DB, query, userID)
 	if err != nil {
 		config.Logger.Error("Failed to fetch user balance", zap.Error(err))
+		return 0, 0, err
+	}
+
+	if err = row.Scan(&currentBalance, &totalWithdrawn); err != nil {
+		config.Logger.Error("Failed to scan result", zap.Error(err))
 		return 0, 0, err
 	}
 	return currentBalance, totalWithdrawn, nil

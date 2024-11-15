@@ -25,8 +25,8 @@ func GenerateToken(username string) (string, error) {
 		"username": username,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
-
-	return token.SignedString(config.SuperSecretKey)
+	secretKey := []byte(config.SuperSecretKey)
+	return token.SignedString(secretKey)
 }
 
 // ValidateToken проверяет JWT-токен на валидность.

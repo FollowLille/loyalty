@@ -46,7 +46,7 @@ func CreateOrder(userID int64, orderNumber string) error {
 
 	query := `INSERT INTO loyalty.orders (id, status) VALUES ($1, 1) RETURNING id`
 	var orderID int
-	err = QueryRowWithRetry(ctx, tx, query, orderNumber, orderID)
+	err = ExecQueryWithRetry(ctx, tx, query, orderNumber, orderID)
 	if err != nil {
 		return fmt.Errorf("failed to insert order: %w", err)
 	}

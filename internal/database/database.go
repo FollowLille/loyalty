@@ -51,6 +51,12 @@ func InitDB(connStr string) error {
 // PrepareDB создает схему, таблицы и VIEW для базы данных.
 func PrepareDB() error {
 	var err error
+
+	if err = CreateStatusDictionary(); err != nil {
+		config.Logger.Fatal("Failed to create status dictionary", zap.Error(err))
+		return err
+	}
+
 	if err = CreateSchema(); err != nil {
 		config.Logger.Fatal("Failed to create schema", zap.Error(err))
 		return err
@@ -63,11 +69,6 @@ func PrepareDB() error {
 
 	if err = CreateOrdersTable(); err != nil {
 		config.Logger.Fatal("Failed to create orders table", zap.Error(err))
-		return err
-	}
-
-	if err = CreateStatusDictionary(); err != nil {
-		config.Logger.Fatal("Failed to create status dictionary", zap.Error(err))
 		return err
 	}
 
@@ -165,6 +166,7 @@ func CreateOrdersTable() error {
 //   - error: ошибка, если произошла ошибка при создании таблицы.
 func CreateStatusDictionary() error {
 	query := `
+			DROP TABLE IF EXISTS loyalty.status_dictionary CASCADE;
 			CREATE TABLE IF NOT EXISTS loyalty.status_dictionary (
 				id INT PRIMARY KEY NOT NULL,
 				status VARCHAR(255) NOT NULL,
@@ -321,9 +323,15 @@ func GetOrderOwner(orderNumber string) (*int64, error) {
 		`
 
 	var userID *int64
-	err := QueryRowWithRetry(context.Background(), DB, query, orderNumber, &userID)
+	row, err := QueryRowWithRetry(context.Background(), DB, query, orderNumber)
 	if err != nil {
 		config.Logger.Error("Failed to get order owner", zap.Error(err))
+		return nil, err
+	}
+
+	err = row.Scan(&userID)
+	if err != nil {
+		config.Logger.Error("Failed to scan row", zap.Error(err))
 		return nil, err
 	}
 	return userID, nil

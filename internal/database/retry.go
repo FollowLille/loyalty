@@ -66,15 +66,18 @@ func ExecQueryWithRetry(ctx context.Context, db ExecContexter, query string, arg
 //
 // Возвращает:
 //   - error: ошибка, если произошла ошибка при выполнении запроса.
-func QueryRowWithRetry(ctx context.Context, db QueryRowContexter, query string, dest ...interface{}) error {
-	err := retry.Retry(func() error {
-		err := db.QueryRowContext(ctx, query).Scan(dest...)
+func QueryRowWithRetry(ctx context.Context, db QueryRowContexter, query string, args ...interface{}) (*sql.Row, error) {
+	var row *sql.Row
+	var err error
+
+	err = retry.Retry(func() error {
+		row = db.QueryRowContext(ctx, query, args...)
 		if err != nil {
 			if retry.IsRetriablePostgresError(err) {
 				config.Logger.Error("Retrying query")
 				return cstmerr.ErrorRetriablePostgres
 			}
-			config.Logger.Error("Non-retriable error during query execution", zap.Error(err))
+			config.Logger.Error("Non retriable error during query execution", zap.Error(err))
 			return cstmerr.ErrorNonRetriablePostgres
 		}
 		return nil
@@ -82,10 +85,10 @@ func QueryRowWithRetry(ctx context.Context, db QueryRowContexter, query string, 
 
 	if err != nil {
 		config.Logger.Error("Failed to execute query", zap.Error(err))
-		return err
+		return nil, err
 	}
 	config.Logger.Info("Query executed successfully")
-	return nil
+	return row, nil
 }
 
 // QueryRowsWithRetry выполняет SQL-запрос, возвращающий список строк, с повторными попытками при возникновении ошибок.

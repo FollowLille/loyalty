@@ -28,9 +28,13 @@ import (
 func IsUserExists(name string) (bool, error) {
 	query := "SELECT EXISTS (SELECT 1 FROM loyalty.users WHERE name = $1)"
 	var exists bool
-	err := QueryRowWithRetry(context.Background(), DB, query, name, &exists)
+	row, err := QueryRowWithRetry(context.Background(), DB, query, name)
 	if err != nil {
 		config.Logger.Error("Failed to check if user exists", zap.Error(err))
+		return false, err
+	}
+	if err = row.Scan(&exists); err != nil {
+		config.Logger.Error("Failed to scan result", zap.Error(err))
 		return false, err
 	}
 	return exists, nil
@@ -78,7 +82,7 @@ func CreateUser(name, passwordHash string) error {
 func GetUserPasswordHash(name string) (string, error) {
 	query := "SELECT password_hash FROM loyalty.users WHERE name = $1"
 	var passwordHash string
-	err := QueryRowWithRetry(context.Background(), DB, query, name, &passwordHash)
+	err := ExecQueryWithRetry(context.Background(), DB, query, name, &passwordHash)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			config.Logger.Warn("User does not exist", zap.String("user", name))
