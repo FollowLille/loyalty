@@ -181,12 +181,12 @@ func CreateStatusDictionary() error {
 	}
 	config.Logger.Info("Status dictionary table is ready")
 
-	insert_query := `
+	insertQuery := `
 		INSERT INTO loyalty.status_dictionary (id, status, is_closed) VALUES
 		  (1, 'NEW', false), (2, 'PROCESSING', false), (3, 'INVALID', false), (4, 'PROCESSED', true)
 		ON CONFLICT (status) DO NOTHING;`
 
-	_, err = DB.Exec(insert_query)
+	_, err = DB.Exec(insertQuery)
 	if err != nil {
 		config.Logger.Error("Failed to create status dictionary table", zap.Error(err))
 		return fmt.Errorf("failed to create status dictionary table: %w", err)

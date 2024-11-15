@@ -86,6 +86,7 @@ func GetUserOrders(userID int64) ([]Order, error) {
 	ctx := context.Background()
 	rows, err := QueryRowsWithRetry(ctx, DB, query, userID)
 	if err != nil {
+		config.Logger.Error("Failed to fetch user orders", zap.Error(err))
 		return nil, fmt.Errorf("failed to fetch user orders: %w", err)
 	}
 	defer rows.Close()
@@ -94,9 +95,14 @@ func GetUserOrders(userID int64) ([]Order, error) {
 	for rows.Next() {
 		var order Order
 		if err := rows.Scan(&order.Number, &order.Status, &order.Accrual, &order.UploadedAt); err != nil {
+			config.Logger.Error("Failed to scan order", zap.Error(err))
 			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}
 		orders = append(orders, order)
+	}
+	if rows.Err() != nil {
+		config.Logger.Error("Failed to fetch user orders", zap.Error(rows.Err()))
+		return nil, fmt.Errorf("failed to fetch user orders: %w", rows.Err())
 	}
 
 	return orders, nil

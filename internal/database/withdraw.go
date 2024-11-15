@@ -72,6 +72,10 @@ func FetchUserWithdrawals(userID int64) ([]Withdrawal, error) {
 		}
 		withdrawals = append(withdrawals, withdrawal)
 	}
+	if rows.Err() != nil {
+		config.Logger.Error("Failed to fetch user withdrawals", zap.Error(rows.Err()))
+		return nil, rows.Err()
+	}
 
 	return withdrawals, nil
 
