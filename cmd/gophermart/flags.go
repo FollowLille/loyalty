@@ -15,7 +15,7 @@ import (
 var (
 	flagAddress         string // Server address
 	flagDatabaseAddress string // Database address
-	flagAccuralAddress  string // Accrual system address
+	flagAccrualAddress  string // Accrual system address
 	flagLogLevel        string // Log level
 )
 
@@ -34,7 +34,7 @@ var (
 func parseFlags() {
 	pflag.StringVarP(&flagAddress, "address", "a", "127.0.0.1:8080", "Server address")
 	pflag.StringVarP(&flagDatabaseAddress, "database", "d", "", "Database address")
-	pflag.StringVarP(&flagAccuralAddress, "accrual-address", "r", "http://localhost:8081", "Accrual system address")
+	pflag.StringVarP(&flagAccrualAddress, "accrual-address", "r", "http://localhost:8081", "Accrual system address")
 	pflag.StringVarP(&flagLogLevel, "log-level", "l", "info", "Log level")
 	pflag.Parse()
 
@@ -48,18 +48,18 @@ func parseFlags() {
 	}
 
 	if envAccuralAddress := os.Getenv("ACCRUAL_SYSTEM_ADDRESS"); envAccuralAddress != "" {
-		flagAccuralAddress = envAccuralAddress
+		flagAccrualAddress = envAccuralAddress
 	}
 
 	if envLogLevel := os.Getenv("LOG_LEVEL"); envLogLevel != "" {
 		flagLogLevel = envLogLevel
 	}
-
+	fmt.Println("Flag is: ", flagDatabaseAddress, " ", flagAccrualAddress, " ", flagLogLevel, " ", flagAddress, " ", flagDatabaseAddress)
 	// Логируем значения флагов.
 	config.Logger.Info("Flags parsed",
 		zap.String("address", flagAddress),
 		zap.String("database", flagDatabaseAddress),
-		zap.String("accrual", flagAccuralAddress),
+		zap.String("accrual", flagAccrualAddress),
 		zap.String("log-level", flagLogLevel))
 	fmt.Println("Flag is: ", flagDatabaseAddress)
 }
