@@ -82,13 +82,18 @@ func CreateUser(name, passwordHash string) error {
 func GetUserPasswordHash(name string) (string, error) {
 	query := "SELECT password_hash FROM loyalty.users WHERE name = $1"
 	var passwordHash string
-	err := ExecQueryWithRetry(context.Background(), DB, query, name, &passwordHash)
+	row, err := QueryRowWithRetry(context.Background(), DB, query, name)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			config.Logger.Warn("User does not exist", zap.String("user", name))
 			return "", nil
 		}
 		config.Logger.Error("Failed to get user password hash", zap.Error(err))
+		return "", err
+	}
+	err = row.Scan(&passwordHash)
+	if err != nil {
+		config.Logger.Error("Failed to scan result", zap.Error(err))
 		return "", err
 	}
 	config.Logger.Info("User password hash retrieved", zap.String("user", name))
