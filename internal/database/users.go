@@ -122,7 +122,7 @@ func ValidateUser(username, password string) (int64, error) {
 	return userID, nil
 }
 
-func GetUserIdByName(name string) (int64, error) {
+func GetUserIDByName(name string) (int64, error) {
 	var userID int64
 	query := `SELECT id FROM loyalty.users WHERE name = $1`
 	row, err := QueryRowWithRetry(context.Background(), DB, query, name)

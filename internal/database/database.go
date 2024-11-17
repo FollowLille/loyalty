@@ -170,9 +170,9 @@ func CreateStatusDictionary() error {
 			DROP TABLE IF EXISTS loyalty.status_dictionary CASCADE;
 			CREATE TABLE IF NOT EXISTS loyalty.status_dictionary (
 				id INT PRIMARY KEY NOT NULL,
-				status VARCHAR(255) NOT NULL,
+				status_name VARCHAR(255) NOT NULL,
 				is_closed BOOLEAN NOT NULL,
-				CONSTRAINT unique_status UNIQUE (status));
+				CONSTRAINT unique_status UNIQUE (status_name));
 			`
 
 	_, err := DB.Exec(query)
@@ -183,9 +183,9 @@ func CreateStatusDictionary() error {
 	config.Logger.Info("Status dictionary table is ready")
 
 	insertQuery := `
-		INSERT INTO loyalty.status_dictionary (id, status, is_closed) VALUES
-		  (1, 'NEW', false), (2, 'PROCESSING', false), (3, 'INVALID', false), (4, 'PROCESSED', true)
-		ON CONFLICT (status) DO NOTHING;`
+		INSERT INTO loyalty.status_dictionary (id, status_name, is_closed) VALUES
+		  (1, 'NEW', false), (2, 'PROCESSING', false), (3, 'INVALID', true), (4, 'PROCESSED', true)
+		ON CONFLICT (status_name) DO NOTHING;`
 
 	_, err = DB.Exec(insertQuery)
 	if err != nil {
@@ -209,7 +209,8 @@ func CreateBonusesTable() error {
 				order_id BIGINT NOT NULL,
 				accrual BIGINT NOT NULL DEFAULT 0,
 				withdrawn BIGINT NOT NULL DEFAULT 0,
-				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    			CONSTRAINT unique_order_id UNIQUE (order_id));
 			    `
 	_, err := DB.Exec(query)
 	if err != nil {
@@ -280,8 +281,8 @@ func CreateUserBonusesView() error {
 		SELECT
 			u.id AS user_id,
 			u.name AS user_name,
-			COALESCE(SUM(CASE WHEN sd.is_closed = TRUE THEN b.accrual ELSE 0 END), 0) AS total_accruals,  -- Сумма начислений только для закрытых заказов
-			COALESCE(SUM(CASE WHEN sd.status != 'INVALID' THEN b.withdrawn ELSE 0 END), 0) AS total_withdrawn -- Сумма списаний для всех заказов
+			COALESCE(SUM(CASE WHEN sd.status_name != 'PROCESSED' THEN b.accrual ELSE 0 END), 0) AS total_accruals,  -- Сумма начислений только для закрытых заказов
+			COALESCE(SUM(CASE WHEN sd.status_name != 'INVALID' THEN b.withdrawn ELSE 0 END), 0) AS total_withdrawn -- Сумма списаний для всех заказов
 		FROM
 			loyalty.users u
 		LEFT JOIN

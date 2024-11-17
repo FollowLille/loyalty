@@ -11,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 
+	"github.com/FollowLille/loyalty/internal/agent"
 	"github.com/FollowLille/loyalty/internal/app/handlers"
 	"github.com/FollowLille/loyalty/internal/app/middleware"
 	"github.com/FollowLille/loyalty/internal/compress"
@@ -57,6 +58,7 @@ func main() {
 	}
 
 	config.Logger.Info("Starting server...", zap.String("address", flagAddress))
+	agent.StartAgent()
 	router.Run(flagAddress)
 }
 

@@ -55,7 +55,8 @@ func FetchUserWithdrawals(userID int64) ([]Withdrawal, error) {
 		ORDER BY processed_at DESC;
 	`
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	var withdrawals []Withdrawal
 	rows, err := QueryRowsWithRetry(ctx, DB, query, userID)
 	if err != nil {
