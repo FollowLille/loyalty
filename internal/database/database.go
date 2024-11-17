@@ -207,8 +207,8 @@ func CreateBonusesTable() error {
 			CREATE TABLE IF NOT EXISTS loyalty.bonuses (
 				id SERIAL PRIMARY KEY NOT NULL,
 				order_id BIGINT NOT NULL,
-				accrual BIGINT NOT NULL DEFAULT 0,
-				withdrawn BIGINT NOT NULL DEFAULT 0,
+				accrual FLOAT8 NOT NULL DEFAULT 0,
+				withdrawn FLOAT8 NOT NULL DEFAULT 0,
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     			CONSTRAINT unique_order_id UNIQUE (order_id));
 			    `

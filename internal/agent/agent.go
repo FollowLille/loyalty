@@ -5,12 +5,14 @@ import (
 
 	"go.uber.org/zap"
 
+	accrualHandler "github.com/FollowLille/loyalty/internal/accrual"
 	"github.com/FollowLille/loyalty/internal/config"
 	"github.com/FollowLille/loyalty/internal/database"
 )
 
 type OrderAgent struct {
-	Interval time.Duration
+	Interval       time.Duration
+	UseExternalAPI bool
 }
 
 var statuses = []string{"PROCESSING", "PROCESSED", "INVALID"}
@@ -19,11 +21,11 @@ func generateRandomStatus() string {
 	return statuses[time.Now().UnixNano()%3]
 }
 
-func generateRandomAccrual() int64 {
-	return time.Now().UnixNano() % 1000
+func generateRandomAccrual() float64 {
+	return float64(time.Now().UnixNano() % 1000)
 }
 
-func generateStatusAndAccrual() (string, int64) {
+func generateStatusAndAccrual() (string, float64) {
 	status := generateRandomStatus()
 	if status == "PROCESSED" {
 		return status, generateRandomAccrual()
@@ -40,8 +42,23 @@ func (a *OrderAgent) processOrders() {
 			continue
 		}
 		for _, order := range orders {
-			status, accrual := generateStatusAndAccrual()
-			err = database.UpdateOrder(order.Number, status, accrual)
+			var status string
+			var accrual float64
+
+			if a.UseExternalAPI {
+				config.Logger.Info("Get order from external API", zap.String("order_number", order.Number))
+				response, err := accrualHandler.FetchOrderAccrual(order.Number)
+				if err != nil {
+					config.Logger.Error("Failed to get order from external API", zap.Error(err))
+					continue
+				}
+
+				status = response.Status
+				accrual = response.Accrual
+			} else {
+				status, accrual = generateStatusAndAccrual()
+			}
+			err = database.UpdateOrder(order.Number, status, float64(accrual))
 			if err != nil {
 				config.Logger.Error("Failed to update order", zap.Error(err))
 				time.Sleep(a.Interval)
@@ -51,7 +68,7 @@ func (a *OrderAgent) processOrders() {
 			config.Logger.Info("Updated order",
 				zap.String("order_number", order.Number),
 				zap.String("status", status),
-				zap.Int64("accrual", accrual),
+				zap.Float64("accrual", accrual),
 			)
 
 		}
@@ -61,7 +78,16 @@ func (a *OrderAgent) processOrders() {
 
 func StartAgent() {
 	agent := &OrderAgent{
-		Interval: 5 * time.Second,
+		Interval:       5 * time.Second,
+		UseExternalAPI: false,
+	}
+	go agent.processOrders()
+}
+
+func StartAgentExternalApi() {
+	agent := &OrderAgent{
+		Interval:       5 * time.Second,
+		UseExternalAPI: true,
 	}
 	go agent.processOrders()
 }

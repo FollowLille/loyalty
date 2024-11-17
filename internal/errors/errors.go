@@ -11,4 +11,5 @@ var (
 	ErrorRetriablePostgres    = errors.New("retriable postgres error")
 	ErrorUserAlreadyExists    = errors.New("user already exists")
 	ErrorUserDoesNotExist     = errors.New("user does not exist")
+	ErrOrderNotFound          = errors.New("order not found")
 )

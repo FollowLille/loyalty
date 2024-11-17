@@ -13,3 +13,5 @@ var DatabaseRetryDelays = []time.Duration{
 }
 
 var SuperSecretKey string = "You'llNeverGuessIt"
+
+var AccrualAPIURL string = "http://localhost:8081"
