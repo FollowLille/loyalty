@@ -76,7 +76,6 @@ func Login(c *gin.Context) {
 		Username string `json:"login" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
-
 	if err := c.ShouldBindJSON(&loginData); err != nil {
 		config.Logger.Error("Failed to bind JSON", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -86,7 +85,7 @@ func Login(c *gin.Context) {
 	user, err := database.GetUserPasswordHash(loginData.Username)
 	if err != nil {
 		if errors.Is(err, cstmerr.ErrorUserDoesNotExist) {
-			config.Logger.Warn("User does not exist", zap.String("user", loginData.Username))
+			config.Logger.Error("User does not exist", zap.String("user", loginData.Username))
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 			return
 		}

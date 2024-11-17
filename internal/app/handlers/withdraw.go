@@ -3,6 +3,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -33,6 +34,18 @@ func GetWithdrawRequest(c *gin.Context) {
 		return
 	}
 
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "user_id is not a string"})
+		return
+	}
+
+	userIDInt, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id format"})
+		return
+	}
+
 	var request WithdrawRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		config.Logger.Error("Failed to bind JSON", zap.Error(err))
@@ -46,7 +59,7 @@ func GetWithdrawRequest(c *gin.Context) {
 		return
 	}
 
-	currentBalance, _, err := database.FetchUserBalance(userID.(int64))
+	currentBalance, _, err := database.FetchUserBalance(userIDInt)
 	if err != nil {
 		config.Logger.Error("Failed to fetch user balance", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user balance"})
@@ -81,7 +94,19 @@ func GetWithdrawals(c *gin.Context) {
 		return
 	}
 
-	withdrawals, err := database.FetchUserWithdrawals(userID.(int64))
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "user_id is not a string"})
+		return
+	}
+
+	userIDInt, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id format"})
+		return
+	}
+
+	withdrawals, err := database.FetchUserWithdrawals(userIDInt)
 	if err != nil {
 		config.Logger.Error("Failed to fetch user withdrawals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user withdrawals"})

@@ -5,10 +5,11 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
-
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
+	"strconv"
 
 	"github.com/FollowLille/loyalty/internal/config"
 )
@@ -143,7 +144,7 @@ func CreateUserTable() error {
 func CreateOrdersTable() error {
 	query := `
 			CREATE TABLE IF NOT EXISTS loyalty.orders (
-				id SERIAL PRIMARY KEY NOT NULL,
+				id BIGINT PRIMARY KEY NOT NULL,
 				status INT NOT NULL,
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 			`
@@ -205,9 +206,9 @@ func CreateBonusesTable() error {
 	query := `
 			CREATE TABLE IF NOT EXISTS loyalty.bonuses (
 				id SERIAL PRIMARY KEY NOT NULL,
-				order_id INT NOT NULL,
-				accrual INT NOT NULL DEFAULT 0,
-				withdrawn INT NOT NULL DEFAULT 0,
+				order_id BIGINT NOT NULL,
+				accrual BIGINT NOT NULL DEFAULT 0,
+				withdrawn BIGINT NOT NULL DEFAULT 0,
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 			    `
 	_, err := DB.Exec(query)
@@ -228,8 +229,8 @@ func CreateBonusesTable() error {
 func CreateUsersOrdersTable() error {
 	query := `
 			CREATE TABLE IF NOT EXISTS loyalty.user_orders (
-				order_id INT NOT NULL,
-				user_id INT NOT NULL,
+				order_id BIGINT NOT NULL,
+				user_id BIGINT NOT NULL,
 				FOREIGN KEY (order_id) REFERENCES loyalty.orders(id) ON DELETE CASCADE,
 				FOREIGN KEY (user_id) REFERENCES loyalty.users(id) ON DELETE CASCADE);
 			`
@@ -252,8 +253,8 @@ func CreateUsersOrdersTable() error {
 func CreateOrdersBonusesTable() error {
 	query := `
 			CREATE TABLE IF NOT EXISTS loyalty.orders_bonuses (
-				order_id INT NOT NULL,
-				bonus_id INT NOT NULL,
+				order_id BIGINT NOT NULL,
+				bonus_id BIGINT NOT NULL,
 				FOREIGN KEY (order_id) REFERENCES loyalty.orders(id) ON DELETE CASCADE,
 				FOREIGN KEY (bonus_id) REFERENCES loyalty.bonuses(id) ON DELETE CASCADE);
 			`
@@ -312,7 +313,7 @@ func CreateUserBonusesView() error {
 //   - orderNumber: номер заказа.
 //
 // Возвращает:
-//   - *int64: идентификатор пользователя, создавшего заказ.
+//   - int64: идентификатор пользователя, создавшего заказ.
 //   - error: ошибка, если произошла ошибка при выполнении запроса.
 func GetOrderOwner(orderNumber string) (*int64, error) {
 	query := `
@@ -322,15 +323,23 @@ func GetOrderOwner(orderNumber string) (*int64, error) {
 		WHERE o.id = $1;
 		`
 
+	orderInt, err := strconv.Atoi(orderNumber)
+	if err != nil {
+		config.Logger.Error("Failed to convert order number to int", zap.Error(err))
+		return nil, err
+	}
 	var userID *int64
-	row, err := QueryRowWithRetry(context.Background(), DB, query, orderNumber)
+	row, err := QueryRowWithRetry(context.Background(), DB, query, orderInt)
 	if err != nil {
 		config.Logger.Error("Failed to get order owner", zap.Error(err))
 		return nil, err
 	}
 
 	err = row.Scan(&userID)
-	if err != nil {
+	if errors.Is(err, sql.ErrNoRows) {
+		config.Logger.Info("Order not found")
+		return nil, nil
+	} else if err != nil {
 		config.Logger.Error("Failed to scan row", zap.Error(err))
 		return nil, err
 	}

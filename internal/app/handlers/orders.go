@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,8 +30,19 @@ func GetOrders(c *gin.Context) {
 		return
 	}
 
-	intUserID := userID.(int64)
-	orders, err := database.GetUserOrders(intUserID)
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "user_id is not a string"})
+		return
+	}
+
+	userIDInt, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id format"})
+		return
+	}
+
+	orders, err := database.GetUserOrders(userIDInt)
 	if err != nil {
 		config.Logger.Error("Failed to get orders", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get orders"})
@@ -67,6 +79,18 @@ func UploadOrder(c *gin.Context) {
 		return
 	}
 
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "user_id is not a string"})
+		return
+	}
+
+	userIDInt, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id format"})
+		return
+	}
+
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil || len(body) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
@@ -77,6 +101,7 @@ func UploadOrder(c *gin.Context) {
 	if !utils.CheckLunar(orderNumber) {
 		config.Logger.Error("Failed to check order number", zap.Error(errors.New("invalid order number")))
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "invalid order number"})
+		return
 	}
 
 	ownerID, err := database.GetOrderOwner(orderNumber)
@@ -87,7 +112,7 @@ func UploadOrder(c *gin.Context) {
 	}
 
 	if ownerID != nil {
-		if *ownerID == userID.(int64) {
+		if *ownerID == userIDInt {
 			config.Logger.Error("Failed to create order", zap.Error(errors.New("order already uploaded by current user")))
 			c.JSON(http.StatusOK, gin.H{"error": "order already uploaded by you"})
 			return
@@ -97,7 +122,7 @@ func UploadOrder(c *gin.Context) {
 		return
 	}
 
-	err = database.CreateOrder(userID.(int64), orderNumber)
+	err = database.CreateOrder(userIDInt, orderNumber)
 	if err != nil {
 		config.Logger.Error("Failed to create order", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create order"})

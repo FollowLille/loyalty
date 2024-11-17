@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
@@ -100,18 +101,40 @@ func GetUserPasswordHash(name string) (string, error) {
 	return passwordHash, nil
 }
 
-func ValidateUserPassword(name, password string) error {
-	passwordHash, err := GetUserPasswordHash(name)
+func ValidateUser(username, password string) (int64, error) {
+	var userID int64
+	var hashedPassword string
+
+	query := `SELECT id, password_hash FROM loyalty.users WHERE name = $1`
+	err := DB.QueryRow(query, username).Scan(&userID, &hashedPassword)
 	if err != nil {
-		return err
-	}
-	if passwordHash == "" {
-		return cstmerr.ErrorUserDoesNotExist
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, err
+		}
+		config.Logger.Error("Failed to validate user", zap.Error(err))
+		return 0, fmt.Errorf("failed to validate user: %w", err)
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
-	if err != nil {
-		return err
+	if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)); err != nil {
+		return 0, err
 	}
-	return nil
+
+	return userID, nil
+}
+
+func GetUserIdByName(name string) (int64, error) {
+	var userID int64
+	query := `SELECT id FROM loyalty.users WHERE name = $1`
+	row, err := QueryRowWithRetry(context.Background(), DB, query, name)
+	if err != nil {
+		return 0, err
+	}
+	err = row.Scan(&userID)
+	if errors.Is(err, sql.ErrNoRows) {
+		config.Logger.Error("User not found", zap.String("user", name))
+	} else if err != nil {
+		config.Logger.Error("Failed to scan result", zap.Error(err))
+		return 0, err
+	}
+	return userID, nil
 }

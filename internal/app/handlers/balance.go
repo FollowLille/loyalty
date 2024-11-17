@@ -4,6 +4,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -30,7 +31,19 @@ func GetBalance(c *gin.Context) {
 		return
 	}
 
-	balance, withdrawn, err := database.FetchUserBalance(userID.(int64))
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "user_id is not a string"})
+		return
+	}
+
+	userIDInt, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id format"})
+		return
+	}
+
+	balance, withdrawn, err := database.FetchUserBalance(userIDInt)
 	if err != nil {
 		config.Logger.Error("Failed to fetch user balance", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user balance"})

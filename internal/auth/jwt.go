@@ -40,24 +40,39 @@ func GenerateToken(username string) (string, error) {
 //   - string: имя пользователя, если токен валиден.
 //   - error: ошибка, если произошла ошибка при проверке токена.
 func ValidateToken(tokenStr string) (string, error) {
+	// Разбор и валидация токена
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		// Проверяем, что используется HMAC с алгоритмом HS256
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return config.SuperSecretKey, nil
+		// Возвращаем ключ в виде []byte
+		return []byte(config.SuperSecretKey), nil
 	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to parse token: %w", err)
 	}
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		expirationTime, ok := claims["exp"].(float64)
-		if !ok {
-			return "", fmt.Errorf("invalid expiration time format")
-		}
-		if time.Now().Unix() > int64(expirationTime) {
-			return "", fmt.Errorf("token expired")
-		}
-		return claims["username"].(string), nil
+
+	// Проверка валидности токена и извлечение claims
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return "", fmt.Errorf("invalid token")
 	}
-	return "", fmt.Errorf("invalid token")
+
+	// Проверяем expiration (exp)
+	expirationTime, ok := claims["exp"].(float64)
+	if !ok {
+		return "", fmt.Errorf("invalid expiration time format")
+	}
+	if time.Now().Unix() > int64(expirationTime) {
+		return "", fmt.Errorf("token expired")
+	}
+
+	// Извлекаем username
+	username, ok := claims["username"].(string)
+	if !ok || username == "" {
+		return "", fmt.Errorf("invalid or missing username in token")
+	}
+
+	return username, nil
 }

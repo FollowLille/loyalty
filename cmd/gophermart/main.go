@@ -38,7 +38,7 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Recovery(), config.RequestLogger(), config.ResponseLogger())
-	router.Use(compress.GzipMiddleware()).Use(compress.GzipResponseMiddleware())
+	router.Use(compress.GzipMiddleware(), compress.GzipResponseMiddleware())
 
 	public := router.Group("/api/user")
 	{
@@ -56,7 +56,6 @@ func main() {
 		protected.GET("/withdrawals", handlers.GetWithdrawals)
 	}
 
-	config.Logger.Info("Starting server...")
 	config.Logger.Info("Starting server...", zap.String("address", flagAddress))
 	router.Run(flagAddress)
 }
