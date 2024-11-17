@@ -84,7 +84,7 @@ func StartAgent() {
 	go agent.processOrders()
 }
 
-func StartAgentExternalApi() {
+func StartAgentExternalAPI() {
 	agent := &OrderAgent{
 		Interval:       5 * time.Second,
 		UseExternalAPI: true,

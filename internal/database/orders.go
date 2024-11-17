@@ -80,7 +80,7 @@ func CreateOrder(userID int64, orderNumber string) error {
 //   - error: ошибка, если произошла ошибка при получении информации о заказах пользователя.
 func GetUserOrders(userID int64) ([]Order, error) {
 	query := `
-		SELECT o.id, sd.status_name, b.accrual, o.created_at
+		SELECT o.id, sd.status_name, COALESCE(b.accrual,0) , o.created_at
 		FROM loyalty.orders o
 		JOIN loyalty.user_orders uo ON o.id = uo.order_id
 		JOIN loyalty.status_dictionary sd ON o.status = sd.id

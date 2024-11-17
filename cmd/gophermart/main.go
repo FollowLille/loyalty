@@ -59,7 +59,7 @@ func main() {
 
 	config.Logger.Info("Starting server...", zap.String("address", flagAddress))
 
-	agent.StartAgentExternalApi()
+	agent.StartAgentExternalAPI()
 	router.Run(flagAddress)
 }
 
