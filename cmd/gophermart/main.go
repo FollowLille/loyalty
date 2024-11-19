@@ -5,19 +5,21 @@ package main
 
 import (
 	"fmt"
-	"os"
-
+	"github.com/FollowLille/loyalty/internal/agent"
+	"github.com/FollowLille/loyalty/internal/mock"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
+	"os"
 
-	"github.com/FollowLille/loyalty/internal/agent"
 	"github.com/FollowLille/loyalty/internal/app/handlers"
 	"github.com/FollowLille/loyalty/internal/app/middleware"
 	"github.com/FollowLille/loyalty/internal/compress"
 	"github.com/FollowLille/loyalty/internal/config"
 	"github.com/FollowLille/loyalty/internal/database"
 )
+
+var useMockAccrualServer bool = true
 
 func main() {
 	if err := godotenv.Load("config.env"); err != nil {
@@ -57,10 +59,24 @@ func main() {
 		protected.GET("/withdrawals", handlers.GetWithdrawals)
 	}
 
-	config.Logger.Info("Starting server...", zap.String("address", flagAddress))
+	go func() {
+		if err := router.Run(flagAddress); err != nil {
+			config.Logger.Fatal("Failed to start main server", zap.Error(err))
+		}
+	}()
 
-	agent.StartAgentExternalAPI()
-	router.Run(flagAddress)
+	go func() {
+		if useMockAccrualServer {
+			config.Logger.Info("Starting mock accrual server...", zap.String("address", flagAccrualAddress))
+			if err := mock.StartMockAccrualServer(flagAccrualAddress); err != nil {
+				config.Logger.Error("Failed to start mock accrual server", zap.Error(err))
+			}
+			agent.StartAgentExternalAPI()
+		} else {
+			config.Logger.Info("Starting main agent...")
+			agent.StartAgent()
+		}
+	}()
 }
 
 func prepareDB() error {
