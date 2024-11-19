@@ -80,6 +80,8 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
+		config.Logger.Info("Starting server...", zap.String("address", flagAddress))
 		if err := router.Run(flagAddress); err != nil {
 			config.Logger.Fatal("Failed to start server", zap.Error(err))
 		}
