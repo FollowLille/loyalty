@@ -69,15 +69,14 @@ func main() {
 		defer wg.Done()
 		if useMockAccrualServer {
 			config.Logger.Info("Starting mock accrual server...", zap.String("address", flagAccrualAddress))
-			go mock.StartMockAccrualServer(flagAccrualAddress) // Заглушка
-			agent.StartAgentExternalAPI()                      // Агент для работы с API.
+			go mock.StartMockAccrualServer(flagAccrualAddress)
+			go agent.StartAgentExternalAPI()
 		} else {
 			config.Logger.Info("Starting main agent...")
-			agent.StartAgent() // Основной агент.
+			go agent.StartAgent() // Основной агент.
 		}
 	}()
 
-	// Запуск HTTP-сервера Gin.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
