@@ -18,7 +18,7 @@ type AccrualResponse struct {
 
 var statuses = []string{"PROCESSING", "PROCESSED", "INVALID"}
 
-func StartMockAccrualServer(address string) {
+func StartMockAccrualServer(address string) error {
 	http.HandleFunc("/api/orders/", func(w http.ResponseWriter, r *http.Request) {
 		orderNumber := r.URL.Path[len("/api/orders/"):]
 
@@ -57,5 +57,7 @@ func StartMockAccrualServer(address string) {
 	})
 	if err := http.ListenAndServe(address, nil); err != nil {
 		config.Logger.Fatal("Failed to start mock accrual server", zap.Error(err))
+		return err
 	}
+	return nil
 }

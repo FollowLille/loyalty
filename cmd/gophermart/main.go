@@ -5,12 +5,10 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"sync"
-
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
+	"os"
 
 	"github.com/FollowLille/loyalty/internal/agent"
 	"github.com/FollowLille/loyalty/internal/app/handlers"
@@ -61,24 +59,13 @@ func main() {
 		protected.GET("/withdrawals", handlers.GetWithdrawals)
 	}
 
-	var wg sync.WaitGroup
-	fmt.Println("Starting server...")
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-
-		config.Logger.Info("Starting server...", zap.String("address", flagAddress))
-		if err := router.Run(flagAddress); err != nil {
-			config.Logger.Fatal("Failed to start server", zap.Error(err))
-		}
-	}()
-	fmt.Println("Starting agent...")
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
 		if useMockAccrualServer {
 			config.Logger.Info("Starting mock accrual server...", zap.String("address", flagAccrualAddress))
-			go mock.StartMockAccrualServer(flagAccrualAddress)
+			if err := mock.StartMockAccrualServer(flagAccrualAddress); err != nil {
+				config.Logger.Error("Failed to start mock accrual server", zap.Error(err))
+				os.Exit(1)
+			}
 			agent.StartAgentExternalAPI()
 		} else {
 			config.Logger.Info("Starting main agent...")
@@ -86,7 +73,9 @@ func main() {
 		}
 	}()
 
-	wg.Wait()
+	if err := router.Run(flagAddress); err != nil {
+		config.Logger.Fatal("Failed to start main server", zap.Error(err))
+	}
 }
 
 func prepareDB() error {
