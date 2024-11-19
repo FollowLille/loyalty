@@ -34,6 +34,7 @@ func generateStatusAndAccrual() (string, float64) {
 }
 
 func (a *OrderAgent) processOrders() {
+	time.Sleep(5 * time.Second)
 	for {
 		orders, err := database.GetOrdersByStatus()
 		if err != nil {
