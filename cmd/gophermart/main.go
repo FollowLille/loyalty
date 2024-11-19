@@ -59,9 +59,11 @@ func main() {
 		protected.GET("/withdrawals", handlers.GetWithdrawals)
 	}
 
-	if err := router.Run(flagAddress); err != nil {
-		config.Logger.Fatal("Failed to start main server", zap.Error(err))
-	}
+	go func() {
+		if err := router.Run(flagAddress); err != nil {
+			config.Logger.Fatal("Failed to start main server", zap.Error(err))
+		}
+	}()
 
 	go func() {
 		if useMockAccrualServer {
