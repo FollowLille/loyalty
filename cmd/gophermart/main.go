@@ -65,19 +65,27 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	if useMockAccrualServer {
-		go func() {
-			defer wg.Done()
-			mock.StartMockAccrualServer(flagAccrualAddress)
-			agent.StartAgentExternalAPI()
-		}()
-	} else {
-		go func() {
-			defer wg.Done()
-			agent.StartAgent()
-		}()
-	}
-	go router.Run(flagAddress)
+	go func() {
+		defer wg.Done()
+		if useMockAccrualServer {
+			config.Logger.Info("Starting mock accrual server...", zap.String("address", flagAccrualAddress))
+			go mock.StartMockAccrualServer(flagAccrualAddress) // Заглушка
+			agent.StartAgentExternalAPI()                      // Агент для работы с API.
+		} else {
+			config.Logger.Info("Starting main agent...")
+			agent.StartAgent() // Основной агент.
+		}
+	}()
+
+	// Запуск HTTP-сервера Gin.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := router.Run(flagAddress); err != nil {
+			config.Logger.Fatal("Failed to start server", zap.Error(err))
+		}
+	}()
+
 	wg.Wait()
 }
 
