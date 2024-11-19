@@ -70,7 +70,6 @@ func main() {
 			config.Logger.Info("Starting mock accrual server...", zap.String("address", flagAccrualAddress))
 			if err := mock.StartMockAccrualServer(flagAccrualAddress); err != nil {
 				config.Logger.Error("Failed to start mock accrual server", zap.Error(err))
-				os.Exit(1)
 			}
 			agent.StartAgentExternalAPI()
 		} else {
