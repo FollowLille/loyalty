@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -17,7 +18,10 @@ import (
 	"github.com/FollowLille/loyalty/internal/compress"
 	"github.com/FollowLille/loyalty/internal/config"
 	"github.com/FollowLille/loyalty/internal/database"
+	"github.com/FollowLille/loyalty/internal/mock"
 )
+
+var useMockAccrualServer bool = true
 
 func main() {
 	if err := godotenv.Load("config.env"); err != nil {
@@ -59,8 +63,22 @@ func main() {
 
 	config.Logger.Info("Starting server...", zap.String("address", flagAddress))
 
-	agent.StartAgentExternalAPI()
-	router.Run(flagAddress)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	if useMockAccrualServer {
+		go func() {
+			defer wg.Done()
+			mock.StartMockAccrualServer(flagAccrualAddress)
+			agent.StartAgentExternalAPI()
+		}()
+	} else {
+		go func() {
+			defer wg.Done()
+			agent.StartAgent()
+		}()
+	}
+	go router.Run(flagAddress)
+	wg.Wait()
 }
 
 func prepareDB() error {
