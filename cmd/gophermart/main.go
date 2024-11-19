@@ -5,18 +5,18 @@ package main
 
 import (
 	"fmt"
+	"github.com/FollowLille/loyalty/internal/agent"
+	"github.com/FollowLille/loyalty/internal/mock"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"os"
 
-	"github.com/FollowLille/loyalty/internal/agent"
 	"github.com/FollowLille/loyalty/internal/app/handlers"
 	"github.com/FollowLille/loyalty/internal/app/middleware"
 	"github.com/FollowLille/loyalty/internal/compress"
 	"github.com/FollowLille/loyalty/internal/config"
 	"github.com/FollowLille/loyalty/internal/database"
-	"github.com/FollowLille/loyalty/internal/mock"
 )
 
 var useMockAccrualServer bool = true
@@ -59,6 +59,10 @@ func main() {
 		protected.GET("/withdrawals", handlers.GetWithdrawals)
 	}
 
+	if err := router.Run(flagAddress); err != nil {
+		config.Logger.Fatal("Failed to start main server", zap.Error(err))
+	}
+
 	go func() {
 		if useMockAccrualServer {
 			config.Logger.Info("Starting mock accrual server...", zap.String("address", flagAccrualAddress))
@@ -72,10 +76,6 @@ func main() {
 			agent.StartAgent()
 		}
 	}()
-
-	if err := router.Run(flagAddress); err != nil {
-		config.Logger.Fatal("Failed to start main server", zap.Error(err))
-	}
 }
 
 func prepareDB() error {
