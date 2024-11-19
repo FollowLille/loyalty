@@ -61,10 +61,8 @@ func main() {
 		protected.GET("/withdrawals", handlers.GetWithdrawals)
 	}
 
-	config.Logger.Info("Starting server...", zap.String("address", flagAddress))
-
 	var wg sync.WaitGroup
-
+	fmt.Println("Starting server...")
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -74,7 +72,7 @@ func main() {
 			config.Logger.Fatal("Failed to start server", zap.Error(err))
 		}
 	}()
-
+	fmt.Println("Starting agent...")
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
