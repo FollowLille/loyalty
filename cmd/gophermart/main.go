@@ -70,10 +70,10 @@ func main() {
 		if useMockAccrualServer {
 			config.Logger.Info("Starting mock accrual server...", zap.String("address", flagAccrualAddress))
 			go mock.StartMockAccrualServer(flagAccrualAddress)
-			go agent.StartAgentExternalAPI()
+			agent.StartAgentExternalAPI()
 		} else {
 			config.Logger.Info("Starting main agent...")
-			go agent.StartAgent() // Основной агент.
+			go agent.StartAgent()
 		}
 	}()
 
