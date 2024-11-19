@@ -44,7 +44,7 @@ func StartMockAccrualServer(address string) {
 		// Возвращаем ответ в формате JSON.
 		w.Header().Set("Content-Type", "application/json")
 		if status == "INVALID" || status == "PROCESSING" || status == "REGISTERED" {
-			response.Accrual = 0 // Не показываем начисления для неокончательных статусов.
+			response.Accrual = 0
 		}
 
 		switch status {
@@ -52,12 +52,9 @@ func StartMockAccrualServer(address string) {
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(response)
 		default:
-			w.WriteHeader(http.StatusNoContent) // Если статус "заказ не найден".
+			w.WriteHeader(http.StatusNoContent)
 		}
 	})
-
-	// Запускаем сервер.
-	config.Logger.Info("Starting mock accrual server", zap.String("address", address))
 	if err := http.ListenAndServe(address, nil); err != nil {
 		config.Logger.Fatal("Failed to start mock accrual server", zap.Error(err))
 	}

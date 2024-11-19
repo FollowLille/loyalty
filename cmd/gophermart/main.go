@@ -21,7 +21,7 @@ import (
 	"github.com/FollowLille/loyalty/internal/mock"
 )
 
-var useMockAccrualServer bool = false
+var useMockAccrualServer bool = true
 
 func main() {
 	if err := godotenv.Load("config.env"); err != nil {
