@@ -21,7 +21,7 @@ import (
 	"github.com/FollowLille/loyalty/internal/mock"
 )
 
-var useMockAccrualServer bool = true
+var useMockAccrualServer bool = false
 
 func main() {
 	if err := godotenv.Load("config.env"); err != nil {
@@ -73,7 +73,7 @@ func main() {
 			agent.StartAgentExternalAPI()
 		} else {
 			config.Logger.Info("Starting main agent...")
-			go agent.StartAgent()
+			agent.StartAgent()
 		}
 	}()
 
