@@ -34,7 +34,7 @@ var (
 func parseFlags() {
 	pflag.StringVarP(&flagAddress, "address", "a", "127.0.0.1:8080", "Server address")
 	pflag.StringVarP(&flagDatabaseAddress, "database", "d", "", "Database address")
-	pflag.StringVarP(&flagAccrualAddress, "accrual-address", "r", "127.0.0.1:8081", "Accrual system address")
+	pflag.StringVarP(&flagAccrualAddress, "accrual-address", "r", "127.0.0.1:8082", "Accrual system address")
 	pflag.StringVarP(&flagLogLevel, "log-level", "l", "info", "Log level")
 	pflag.Parse()
 
