@@ -21,6 +21,9 @@ import (
 //   - string: JWT-токен для указанного пользователя.
 //   - error: ошибка, если произошла ошибка при генерации токена.
 func GenerateToken(username string) (string, error) {
+	if username == "" {
+		return "", fmt.Errorf("empty username")
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": username,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),

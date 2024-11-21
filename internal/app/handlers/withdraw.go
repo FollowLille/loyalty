@@ -25,6 +25,12 @@ type WithdrawResponse struct {
 	ProcessedAt time.Time `json:"processed_at"`
 }
 
+// GetWithdrawRequest обрабатывает запрос на вывод баланса пользователя.
+// Если произошла ошибка при выполнении запроса, программа завершается с кодом ошибки.
+// В случае успеха, возвращает nil.
+//
+// Параметры:
+//   - c: контекст HTTP-запроса.
 func GetWithdrawRequest(c *gin.Context) {
 
 	userID, ok := c.Get("user_id")

@@ -20,6 +20,8 @@ type ExecContexter interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
+// QueryRowContexter представляет интерфейс для выполнения SQL-запросов с возвратом результата.
+// Используется как для sql.DB, так и для sql.Tx.
 type QueryRowContexter interface {
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }

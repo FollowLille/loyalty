@@ -115,6 +115,14 @@ func GetUserOrders(userID int64) ([]Order, error) {
 	return orders, nil
 }
 
+// GetOrdersByStatus возвращает информацию о заказах с указанным статусом
+//
+// Параметры:
+//   - status: статус.
+//
+// Возвращает:
+//   - []Order: информация о заказах с указанным статусом.
+//   - error: ошибка, если произошла ошибка при получении информации о заказах с указанным статусом.
 func GetOrdersByStatus() ([]Order, error) {
 	var orders []Order
 	query := `
@@ -145,6 +153,17 @@ func GetOrdersByStatus() ([]Order, error) {
 	return orders, nil
 }
 
+// UpdateOrder обновляет статус заказа
+// Если произошла ошибка при выполнении запроса, программа завершается с кодом ошибки.
+// В случае успеха, возвращается nil.
+//
+// Параметры:
+//   - orderNumber: номер заказа.
+//   - status: статус.
+//   - accrual: сумма начисленных бонусов.
+//
+// Возвращает:
+//   - error: ошибка, если произошла ошибка при выполнении запроса.
 func UpdateOrder(orderNumber, status string, accrual float64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

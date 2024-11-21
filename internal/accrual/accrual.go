@@ -1,3 +1,5 @@
+// Package accrual предоставляет функции для обработки запросов на взаимодействие с программой лояльности
+// Делал заглушку для прохождения тестов, не помогло, оставил для понимания и возможного переиспользования
 package accrual
 
 import (
@@ -20,6 +22,15 @@ type ExternalAccrualResponse struct {
 	Accrual float64 `json:"accrual,omitempty"`
 }
 
+// FetchOrderAccrual возвращает информацию о начислениях по указанному номеру заказа
+// Если произошла ошибка при выполнении запроса, программа завершается с кодом ошибки.
+// В случае успеха, возвращает структуру ExternalAccrualResponse
+// Параметры:
+//   - orderNumber: номер заказа
+//
+// Возвращаемое значение:
+//   - ExternalAccrualResponse: структура с информацией о начислениях
+//   - error: в случае ошибки
 func FetchOrderAccrual(orderNumber string) (*ExternalAccrualResponse, error) {
 	url := fmt.Sprintf("%s/api/orders/%s", config.AccrualAPIURL, orderNumber)
 	config.Logger.Info("Requesting external accrual API", zap.String("url", url))
@@ -73,6 +84,13 @@ func FetchOrderAccrual(orderNumber string) (*ExternalAccrualResponse, error) {
 	}
 }
 
+// ProcessOrderAccrual обрабатывает информацию о начислениях по указанному номеру заказа
+// Если произошла ошибка при обработке заказа, программа завершается с кодом ошибки.
+// Параметры:
+//   - orderNumber: номер заказа
+//
+// Возвращаемое значение:
+//   - error: в случае ошибки
 func ProcessOrderAccrual(orderNumber string) error {
 	config.Logger.Info("Processing order accrual", zap.String("order", orderNumber))
 

@@ -14,7 +14,9 @@ import "strconv"
 func CheckLunar(orderNumber string) bool {
 	var sum int
 	var remainder = len(orderNumber) % 2
-
+	if len(orderNumber) == 0 {
+		return false
+	}
 	for i, num := range orderNumber {
 		digit, err := strconv.Atoi(string(num))
 

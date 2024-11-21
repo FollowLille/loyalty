@@ -17,14 +17,17 @@ type OrderAgent struct {
 
 var statuses = []string{"PROCESSING", "PROCESSED", "INVALID"}
 
+// generateRandomOrder генерирует случайный статус
 func generateRandomStatus() string {
 	return statuses[time.Now().UnixNano()%3]
 }
 
+// generateRandomAccrual генерирует случайные начисления
 func generateRandomAccrual() float64 {
 	return float64(time.Now().UnixNano() % 1000)
 }
 
+// generateStatusAndAccrual генерирует случайные статус и начисления
 func generateStatusAndAccrual() (string, float64) {
 	status := generateRandomStatus()
 	if status == "PROCESSED" {
@@ -33,6 +36,8 @@ func generateStatusAndAccrual() (string, float64) {
 	return status, 0
 }
 
+// processOrders обрабатывает актуальные заказы
+// Агент постоянно ходит в базу данных, проверяет наличие необработанных заказов и обрбатывает их
 func (a *OrderAgent) processOrders() {
 	time.Sleep(5 * time.Second)
 	for {
@@ -77,6 +82,7 @@ func (a *OrderAgent) processOrders() {
 	}
 }
 
+// StartAgent запускает агента с генерацией случайных данных
 func StartAgent() {
 	agent := &OrderAgent{
 		Interval:       5 * time.Second,
@@ -85,6 +91,7 @@ func StartAgent() {
 	go agent.processOrders()
 }
 
+// StartAgentExternalAPI запускает агента с использованием внешнего API
 func StartAgentExternalAPI() {
 	agent := &OrderAgent{
 		Interval:       5 * time.Second,

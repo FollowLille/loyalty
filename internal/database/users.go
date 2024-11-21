@@ -101,6 +101,16 @@ func GetUserPasswordHash(name string) (string, error) {
 	return passwordHash, nil
 }
 
+// ValidateUser проверяет пароль пользователя и возвращает идентификатор пользователя.
+// Если пользователь не найден, возвращает 0 и nil.
+//
+// Параметры:
+//   - username: имя пользователя для проверки.
+//   - password: пароль пользователя.
+//
+// Возвращает:
+//   - int64: идентификатор пользователя, если он найден.
+//   - error: ошибка, если произошла ошибка при выполнении запроса.
 func ValidateUser(username, password string) (int64, error) {
 	var userID int64
 	var hashedPassword string
@@ -122,6 +132,14 @@ func ValidateUser(username, password string) (int64, error) {
 	return userID, nil
 }
 
+// GetUserIDByName возвращает идентификатор пользователя по его имени.
+//
+// Параметры:
+//   - name: имя пользователя для поиска.
+//
+// Возвращает:
+//   - int64: идентификатор пользователя.
+//   - error: ошибка, если произошла ошибка при выполнении запроса.
 func GetUserIDByName(name string) (int64, error) {
 	var userID int64
 	query := `SELECT id FROM loyalty.users WHERE name = $1`

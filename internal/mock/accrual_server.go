@@ -1,3 +1,5 @@
+// Package mock предоставляет функции для мокирования работы с программой лояльности
+// Делал заглушку для тестов, но в итоге и это не помогло
 package mock
 
 import (
@@ -18,6 +20,14 @@ type AccrualResponse struct {
 
 var statuses = []string{"PROCESSING", "PROCESSED", "INVALID"}
 
+// StartMockAccrualServer запускает сервер для мокирования работы с программой лояльности
+// Функция предоставляет случайные ответы, имитирующие логику работы программы лояльности
+//
+// Параметры:
+//   - address: адрес для запуска сервера
+//
+// Возвращает:
+//   - error: ошибка, если произошла ошибка при запуске сервера
 func StartMockAccrualServer(address string) error {
 	http.HandleFunc("/api/orders/", func(w http.ResponseWriter, r *http.Request) {
 		orderNumber := r.URL.Path[len("/api/orders/"):]
