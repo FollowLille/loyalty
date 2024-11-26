@@ -3,6 +3,7 @@
 package handlers
 
 import (
+	"github.com/FollowLille/loyalty/internal/services"
 	"net/http"
 	"strconv"
 
@@ -10,14 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/FollowLille/loyalty/internal/config"
-	"github.com/FollowLille/loyalty/internal/database"
 )
-
-// BalanceResponse представляет информацию о балансе пользователя
-type BalanceResponse struct {
-	CurrentBalance float64 `json:"current_balance"`
-	TotalWithdrawn float64 `json:"total_withdrawn"`
-}
 
 // GetUserBalance возвращает информацию о балансе пользователя
 //
@@ -42,16 +36,15 @@ func GetBalance(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id format"})
 		return
 	}
-
-	balance, withdrawn, err := database.FetchUserBalance(userIDInt)
+	userBalance, err := services.FetchUserBalance(userIDInt)
 	if err != nil {
 		config.Logger.Error("Failed to fetch user balance", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user balance"})
 		return
-	}
 
-	c.JSON(http.StatusOK, BalanceResponse{
-		CurrentBalance: balance,
-		TotalWithdrawn: withdrawn,
-	})
+		c.JSON(http.StatusOK, BalanceResponse{
+			CurrentBalance: userBalance.CurrentBalance,
+			TotalWithdrawn: userBalance.TotalWithdrawn,
+		})
+	}
 }

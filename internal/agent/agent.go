@@ -39,63 +39,56 @@ func generateStatusAndAccrual() (string, float64) {
 // processOrders обрабатывает актуальные заказы
 // Агент постоянно ходит в базу данных, проверяет наличие необработанных заказов и обрбатывает их
 func (a *OrderAgent) processOrders() {
-	time.Sleep(5 * time.Second)
+	config.Logger.Info("Process orders started")
+	ticker := time.NewTicker(a.Interval)
+	defer ticker.Stop()
 	for {
-		orders, err := database.GetOrdersByStatus()
-		if err != nil {
-			config.Logger.Error("Failed to get orders", zap.Error(err))
-			time.Sleep(a.Interval)
-			continue
-		}
-		for _, order := range orders {
-			var status string
-			var accrual float64
+		select {
+		case <-ticker.C:
+			orders, err := database.GetOrdersByStatus()
+			if err != nil {
+				config.Logger.Error("Failed to get orders", zap.Error(err))
+				continue
+			}
+			for _, order := range orders {
+				var status string
+				var accrual float64
 
-			if a.UseExternalAPI {
-				config.Logger.Info("Get order from external API", zap.String("order_number", order.Number))
-				response, err := accrualHandler.FetchOrderAccrual(order.Number)
+				if a.UseExternalAPI {
+					config.Logger.Info("Get order from external API", zap.String("order_number", order.Number))
+					response, err := accrualHandler.FetchOrderAccrual(order.Number)
+					if err != nil {
+						config.Logger.Error("Failed to get order from external API", zap.Error(err))
+						continue
+					}
+
+					status = response.Status
+					accrual = response.Accrual
+				} else {
+					status, accrual = generateStatusAndAccrual()
+				}
+
+				err = database.UpdateOrder(order.Number, status, accrual)
 				if err != nil {
-					config.Logger.Error("Failed to get order from external API", zap.Error(err))
+					config.Logger.Error("Failed to update order", zap.Error(err))
 					continue
 				}
 
-				status = response.Status
-				accrual = response.Accrual
-			} else {
-				status, accrual = generateStatusAndAccrual()
+				config.Logger.Info("Updated order",
+					zap.String("order_number", order.Number),
+					zap.String("status", status),
+					zap.Float64("accrual", accrual),
+				)
 			}
-			err = database.UpdateOrder(order.Number, status, float64(accrual))
-			if err != nil {
-				config.Logger.Error("Failed to update order", zap.Error(err))
-				time.Sleep(a.Interval)
-				continue
-			}
-
-			config.Logger.Info("Updated order",
-				zap.String("order_number", order.Number),
-				zap.String("status", status),
-				zap.Float64("accrual", accrual),
-			)
-
 		}
-		time.Sleep(a.Interval)
 	}
 }
 
 // StartAgent запускает агента с генерацией случайных данных
-func StartAgent() {
+func StartAgent(apiFlag bool) {
 	agent := &OrderAgent{
 		Interval:       5 * time.Second,
-		UseExternalAPI: false,
-	}
-	go agent.processOrders()
-}
-
-// StartAgentExternalAPI запускает агента с использованием внешнего API
-func StartAgentExternalAPI() {
-	agent := &OrderAgent{
-		Interval:       5 * time.Second,
-		UseExternalAPI: true,
+		UseExternalAPI: apiFlag,
 	}
 	go agent.processOrders()
 }

@@ -87,7 +87,7 @@ func GetUserPasswordHash(name string) (string, error) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			config.Logger.Warn("User does not exist", zap.String("user", name))
-			return "", nil
+			return "", cstmerr.ErrorUserDoesNotExist
 		}
 		config.Logger.Error("Failed to get user password hash", zap.Error(err))
 		return "", err

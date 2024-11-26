@@ -3,19 +3,15 @@
 package handlers
 
 import (
-	"errors"
+	"github.com/FollowLille/loyalty/internal/services"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
-
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 
 	"github.com/FollowLille/loyalty/internal/config"
-	"github.com/FollowLille/loyalty/internal/database"
-	"github.com/FollowLille/loyalty/internal/utils"
 )
 
 // GetOrders возвращает информацию о заказах пользователя
@@ -42,29 +38,19 @@ func GetOrders(c *gin.Context) {
 		return
 	}
 
-	orders, err := database.GetUserOrders(userIDInt)
+	orders, err := services.GetOrders(userIDInt)
 	if err != nil {
 		config.Logger.Error("Failed to get orders", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get orders"})
 		return
 	}
-	if len(orders) == 0 {
+	if orders == nil {
 		config.Logger.Info("No orders found")
 		c.JSON(http.StatusNoContent, nil)
 		return
 	}
 
-	response := make([]map[string]interface{}, len(orders))
-	for i, order := range orders {
-		response[i] = map[string]interface{}{
-			"number":      order.Number,
-			"status":      order.Status,
-			"accrual":     order.Accrual,
-			"uploaded_at": order.UploadedAt.Format(time.RFC3339),
-		}
-	}
-
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, orders)
 }
 
 // UploadOrder обрабатывает информацию о заказе пользователя
@@ -98,36 +84,21 @@ func UploadOrder(c *gin.Context) {
 	}
 	orderNumber := strings.TrimSpace(string(body))
 
-	if !utils.CheckLunar(orderNumber) {
-		config.Logger.Error("Failed to check order number", zap.Error(errors.New("invalid order number")))
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "invalid order number"})
-		return
-	}
-
-	ownerID, err := database.GetOrderOwner(orderNumber)
-	if err != nil {
-		config.Logger.Error("Failed to get order owner", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get order owner"})
-		return
-	}
-
-	if ownerID != nil {
-		if *ownerID == userIDInt {
-			config.Logger.Error("Failed to create order", zap.Error(errors.New("order already uploaded by current user")))
+	if err := services.UploadOrder(userIDInt, orderNumber); err != nil {
+		config.Logger.Error("Failed to upload order", zap.Error(err))
+		switch err.Error() {
+		case "invalid order number":
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "invalid order number"})
+		case "order already uploaded by current user":
 			c.JSON(http.StatusOK, gin.H{"error": "order already uploaded by you"})
-			return
+		case "order already uploaded by another user":
+			c.JSON(http.StatusConflict, gin.H{"error": "order already uploaded by another user"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload order"})
 		}
-		config.Logger.Error("Failed to create order", zap.Error(errors.New("order already uploaded by another user")))
-		c.JSON(http.StatusConflict, gin.H{"error": "order already uploaded by another user"})
 		return
 	}
 
-	err = database.CreateOrder(userIDInt, orderNumber)
-	if err != nil {
-		config.Logger.Error("Failed to create order", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create order"})
-		return
-	}
 	config.Logger.Info("Order created successfully")
 	c.JSON(http.StatusAccepted, gin.H{"message": "order accepted for processing"})
 }

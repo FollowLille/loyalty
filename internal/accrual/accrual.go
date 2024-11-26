@@ -39,7 +39,7 @@ func FetchOrderAccrual(orderNumber string) (*ExternalAccrualResponse, error) {
 		Timeout: 30 * time.Second, // Устанавливаем таймаут на запрос.
 	}
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		config.Logger.Error("Failed to create request", zap.Error(err))
 		return nil, err

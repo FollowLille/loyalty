@@ -2,28 +2,14 @@
 package handlers
 
 import (
-	"net/http"
-	"strconv"
-	"time"
-
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"net/http"
+	"strconv"
 
 	"github.com/FollowLille/loyalty/internal/config"
-	"github.com/FollowLille/loyalty/internal/database"
-	"github.com/FollowLille/loyalty/internal/utils"
+	"github.com/FollowLille/loyalty/internal/services"
 )
-
-type WithdrawRequest struct {
-	Order string  `json:"order"`
-	Sum   float64 `json:"sum"`
-}
-
-type WithdrawResponse struct {
-	Order       string    `json:"order"`
-	Sum         float64   `json:"sum"`
-	ProcessedAt time.Time `json:"processed_at"`
-}
 
 // GetWithdrawRequest обрабатывает запрос на вывод баланса пользователя.
 // Если произошла ошибка при выполнении запроса, программа завершается с кодом ошибки.
@@ -32,7 +18,6 @@ type WithdrawResponse struct {
 // Параметры:
 //   - c: контекст HTTP-запроса.
 func GetWithdrawRequest(c *gin.Context) {
-
 	userID, ok := c.Get("user_id")
 	if !ok {
 		config.Logger.Error("Failed to get user ID")
@@ -52,40 +37,30 @@ func GetWithdrawRequest(c *gin.Context) {
 		return
 	}
 
-	var request WithdrawRequest
+	var request services.WithdrawRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		config.Logger.Error("Failed to bind JSON", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
-	if !utils.CheckLunar(request.Order) {
-		config.Logger.Error("Failed to check lunar")
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "invalid order"})
+	if err := services.ProcessWithdrawRequest(userIDInt, request); err != nil {
+		if err.Error() == "invalid order number" {
+			config.Logger.Error("Failed to process withdraw due to invalid order number")
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "invalid order"})
+			return
+		} else if err.Error() == "insufficient balance" {
+			config.Logger.Error("Failed to process withdraw due to insufficient balance")
+			c.JSON(http.StatusPaymentRequired, gin.H{"error": "insufficient balance"})
+			return
+		}
+
+		config.Logger.Error("Failed to process withdraw", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process withdraw"})
 		return
 	}
 
-	currentBalance, _, err := database.FetchUserBalance(userIDInt)
-	if err != nil {
-		config.Logger.Error("Failed to fetch user balance", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user balance"})
-		return
-	}
-
-	if currentBalance < request.Sum {
-		config.Logger.Error("Failed to withdraw due to insufficient balance")
-		c.JSON(http.StatusPaymentRequired, gin.H{"error": "insufficient balance"})
-		return
-	}
-
-	if err := database.RegisterWithdraw(request.Order, request.Sum); err != nil {
-		config.Logger.Error("Failed to withdraw", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to withdraw"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Withdrawal successful"})
-
+	c.JSON(http.StatusOK, gin.H{"message": "Withdraw request processed"})
 }
 
 // GetWithdrawals возвращает список выводов баланса пользователя.
@@ -112,7 +87,7 @@ func GetWithdrawals(c *gin.Context) {
 		return
 	}
 
-	withdrawals, err := database.FetchUserWithdrawals(userIDInt)
+	withdrawals, err := services.FetchWithdrawals(userIDInt)
 	if err != nil {
 		config.Logger.Error("Failed to fetch user withdrawals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user withdrawals"})
@@ -125,14 +100,5 @@ func GetWithdrawals(c *gin.Context) {
 		return
 	}
 
-	response := make([]WithdrawResponse, len(withdrawals))
-	for i, withdrawal := range withdrawals {
-		response[i] = WithdrawResponse{
-			Order:       withdrawal.OrderNumber,
-			Sum:         withdrawal.Sum,
-			ProcessedAt: withdrawal.ProcessedAt,
-		}
-	}
-
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, withdrawals)
 }

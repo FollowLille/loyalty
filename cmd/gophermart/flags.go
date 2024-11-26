@@ -17,6 +17,7 @@ var (
 	flagDatabaseAddress string // Database address
 	flagAccrualAddress  string // Accrual system address
 	flagLogLevel        string // Log level
+	flagApi             bool   // Flag to use API to update orders or not
 )
 
 // parseFlags парсит командные флаги и переменные окружения для настройки сервера.
@@ -25,10 +26,11 @@ var (
 //
 // Пример использования:
 //
-//	-address=127.0.0.1:8080
-//	-database=postgres://user:password@localhost/dbname
-//	-accrual-address=http://localhost:8081
-//	-log-level=debug
+//		-address=127.0.0.1:8080
+//		-database=postgres://user:password@localhost/dbname
+//		-accrual-address=http://localhost:8081
+//		-log-level=debug
+//	 -flag-api=false
 //
 // После парсинга флагов, информация о них логируется с использованием zap.
 func parseFlags() {
@@ -36,6 +38,7 @@ func parseFlags() {
 	pflag.StringVarP(&flagDatabaseAddress, "database", "d", "", "Database address")
 	pflag.StringVarP(&flagAccrualAddress, "accrual-address", "r", "127.0.0.1:8082", "Accrual system address")
 	pflag.StringVarP(&flagLogLevel, "log-level", "l", "info", "Log level")
+	pflag.BoolVarP(&flagApi, "flag-api", "f", false, "Flag to use API to update orders or not")
 	pflag.Parse()
 
 	// Переопределение значений флагов значениями переменных окружения, если они заданы.
@@ -60,6 +63,6 @@ func parseFlags() {
 		zap.String("address", flagAddress),
 		zap.String("database", flagDatabaseAddress),
 		zap.String("accrual", flagAccrualAddress),
-		zap.String("log-level", flagLogLevel))
-	fmt.Println("Flag is: ", flagDatabaseAddress)
+		zap.String("log-level", flagLogLevel),
+		zap.Bool("flag-api", flagApi))
 }
