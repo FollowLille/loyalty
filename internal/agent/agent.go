@@ -13,6 +13,7 @@ import (
 type OrderAgent struct {
 	Interval       time.Duration
 	UseExternalAPI bool
+	stopCh         chan struct{} // канал для завершения работы агента
 }
 
 var statuses = []string{"PROCESSING", "PROCESSED", "INVALID"}
@@ -37,11 +38,12 @@ func generateStatusAndAccrual() (string, float64) {
 }
 
 // processOrders обрабатывает актуальные заказы
-// Агент постоянно ходит в базу данных, проверяет наличие необработанных заказов и обрбатывает их
+// Агент постоянно ходит в базу данных, проверяет наличие необработанных заказов и обрабатывает их
 func (a *OrderAgent) processOrders() {
 	config.Logger.Info("Process orders started")
 	ticker := time.NewTicker(a.Interval)
 	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ticker.C:
@@ -80,15 +82,26 @@ func (a *OrderAgent) processOrders() {
 					zap.Float64("accrual", accrual),
 				)
 			}
+		case <-a.stopCh:
+			config.Logger.Info("Stopping order processing")
+			return
 		}
 	}
 }
 
 // StartAgent запускает агента с генерацией случайных данных
-func StartAgent(apiFlag bool) {
+func StartAgent(apiFlag bool) *OrderAgent {
 	agent := &OrderAgent{
 		Interval:       5 * time.Second,
 		UseExternalAPI: apiFlag,
+		stopCh:         make(chan struct{}),
 	}
 	go agent.processOrders()
+	return agent
+}
+
+// StopAgent завершает работу агента
+func (a *OrderAgent) StopAgent() {
+	close(a.stopCh)
+	config.Logger.Info("Agent stopped")
 }

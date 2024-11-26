@@ -42,7 +42,7 @@ func GetBalance(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user balance"})
 		return
 
-		c.JSON(http.StatusOK, BalanceResponse{
+		c.JSON(http.StatusOK, services.UserBalance{
 			CurrentBalance: userBalance.CurrentBalance,
 			TotalWithdrawn: userBalance.TotalWithdrawn,
 		})
