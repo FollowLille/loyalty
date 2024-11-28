@@ -88,7 +88,6 @@ func QueryRowWithRetry(ctx context.Context, db QueryRowContexter, query string, 
 		config.Logger.Error("Failed to execute query", zap.Error(err))
 		return nil, err
 	}
-	config.Logger.Info("Query executed successfully")
 	return row, nil
 }
 

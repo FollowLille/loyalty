@@ -42,6 +42,8 @@ func GetBalance(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user balance"})
 		return
 	}
+
+	config.Logger.Info("Fetched user balance", zap.Float64("current_balance", userBalance.CurrentBalance), zap.Float64("total_withdrawn", userBalance.TotalWithdrawn))
 	c.JSON(http.StatusOK, services.UserBalance{
 		CurrentBalance: userBalance.CurrentBalance,
 		TotalWithdrawn: userBalance.TotalWithdrawn,
