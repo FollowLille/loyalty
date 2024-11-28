@@ -43,9 +43,9 @@ func GetBalance(c *gin.Context) {
 		return
 	}
 
-	config.Logger.Info("Fetched user balance", zap.Float64("current_balance", userBalance.CurrentBalance), zap.Float64("total_withdrawn", userBalance.TotalWithdrawn))
+	config.Logger.Info("Fetched user balance", zap.Float64("current_balance", userBalance.Current), zap.Float64("total_withdrawn", userBalance.Withdrawn))
 	c.JSON(http.StatusOK, services.UserBalance{
-		CurrentBalance: userBalance.CurrentBalance,
-		TotalWithdrawn: userBalance.TotalWithdrawn,
+		Current:   userBalance.Current,
+		Withdrawn: userBalance.Withdrawn,
 	})
 }

@@ -7,8 +7,8 @@ import (
 )
 
 type UserBalance struct {
-	CurrentBalance float64
-	TotalWithdrawn float64
+	Current   float64
+	Withdrawn float64
 }
 
 // FetchUserBalance выполняет бизнес-логику для получения баланса пользователя.
@@ -28,7 +28,7 @@ func FetchUserBalance(userID int64) (UserBalance, error) {
 	}
 
 	return UserBalance{
-		CurrentBalance: balance,
-		TotalWithdrawn: withdrawn,
+		Current:   balance,
+		Withdrawn: withdrawn,
 	}, nil
 }
