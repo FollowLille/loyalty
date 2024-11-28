@@ -20,7 +20,9 @@ var statuses = []string{"PROCESSING", "PROCESSED", "INVALID"}
 
 // generateRandomOrder генерирует случайный статус
 func generateRandomStatus() string {
-	return statuses[time.Now().UnixNano()%3]
+	//return statuses[time.Now().UnixNano()%3]
+	mockStatus := "PROCESSED"
+	return mockStatus
 }
 
 // generateRandomAccrual генерирует случайные начисления
