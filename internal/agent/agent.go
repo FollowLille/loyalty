@@ -25,7 +25,9 @@ func generateRandomStatus() string {
 
 // generateRandomAccrual генерирует случайные начисления
 func generateRandomAccrual() float64 {
-	return float64(time.Now().UnixNano() % 1000)
+	//return float64(time.Now().UnixNano() % 1000)
+	mockFloat := 729.98
+	return mockFloat
 }
 
 // generateStatusAndAccrual генерирует случайные статус и начисления
