@@ -281,7 +281,7 @@ func CreateUserBonusesView() error {
 		SELECT
 			u.id AS user_id,
 			u.name AS user_name,
-			COALESCE(SUM(CASE WHEN sd.status_name != 'PROCESSED' THEN 0 ELSE b.accrual END), 0) AS total_accruals,  -- Сумма начислений только для закрытых заказов
+			COALESCE(SUM(CASE WHEN sd.status_name = 'PROCESSED' THEN b.accrual ELSE 0 END), 0) AS total_accruals,  -- Сумма начислений только для закрытых заказов
 			COALESCE(SUM(CASE WHEN sd.status_name != 'INVALID' THEN b.withdrawn ELSE 0 END), 0) AS total_withdrawn -- Сумма списаний для всех заказов
 		FROM
 			loyalty.users u

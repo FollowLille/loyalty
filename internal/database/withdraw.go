@@ -4,6 +4,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -22,21 +23,61 @@ type Withdrawal struct {
 // В случае успеха, возвращает nil.
 //
 // Параметры:
+//   - userID: идентификатор пользователя.
 //   - orderNumber: идентификатор заказа.
 //   - sum: сумма вывода.
 //
 // Возвращает:
 //   - error: ошибка, если произошла ошибка при выполнении запроса.
-func RegisterWithdraw(orderNumber string, sum float64) error {
+func RegisterWithdraw(userID int64, orderNumber string, sum float64) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	tx, err := DB.BeginTx(ctx, nil)
+
+	if err != nil {
+		config.Logger.Error("Failed to start transaction", zap.Error(err))
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			if rbErr := tx.Rollback(); rbErr != nil {
+				config.Logger.Error("Failed to rollback transaction", zap.Error(rbErr))
+			}
+		}
+	}()
+
 	query := `
 		INSERT INTO loyalty.bonuses (order_id, withdrawn)
 		VALUES ($1, $2)
+		ON CONFLICT (order_id) 
+		DO UPDATE SET withdrawn = EXCLUDED.withdrawn
+		returning order_id
 		`
 
-	err := ExecQueryWithRetry(context.Background(), DB, query, orderNumber, sum)
+	var orderID int
+	row, err := QueryRowWithRetry(ctx, tx, query, orderNumber, sum)
 	if err != nil {
-		config.Logger.Error("Failed to register withdraw", zap.Error(err))
-		return err
+		return fmt.Errorf("failed to get order ID: %w", err)
+	}
+	if err = row.Scan(&orderID); err != nil {
+		return fmt.Errorf("failed to scan order ID: %w", err)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to insert order: %w", err)
+	}
+	err = ExecQueryWithRetry(ctx, tx, `INSERT INTO loyalty.orders (id, status) VALUES ($1, 4) on conflict (id) do update set status = EXCLUDED.status`, orderID)
+	if err != nil {
+		config.Logger.Error("Failed to update order status", zap.Error(err))
+		return fmt.Errorf("failed to update order status: %w", err)
+	}
+
+	err = ExecQueryWithRetry(ctx, tx, `INSERT INTO loyalty.user_orders (user_id, order_id) VALUES ($1, $2)`, userID, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to link user and order: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil

@@ -2,6 +2,8 @@ package services
 
 import (
 	"errors"
+	"github.com/FollowLille/loyalty/internal/config"
+	"go.uber.org/zap"
 	"time"
 
 	"github.com/FollowLille/loyalty/internal/database"
@@ -42,7 +44,8 @@ func ProcessWithdrawRequest(userID int64, req WithdrawRequest) error {
 		return errors.New("insufficient balance")
 	}
 
-	if err := database.RegisterWithdraw(req.Order, req.Sum); err != nil {
+	if err := database.RegisterWithdraw(userID, req.Order, req.Sum); err != nil {
+		config.Logger.Error("Failed to register withdrawal", zap.Error(err))
 		return errors.New("failed to register withdrawal")
 	}
 
