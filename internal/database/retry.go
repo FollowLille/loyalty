@@ -54,7 +54,6 @@ func ExecQueryWithRetry(ctx context.Context, db ExecContexter, query string, arg
 		config.Logger.Error("Failed to execute query", zap.Error(err))
 		return err
 	}
-	config.Logger.Info("Query executed successfully")
 	return nil
 }
 

@@ -89,7 +89,7 @@ func UploadOrder(c *gin.Context) {
 		switch err.Error() {
 		case "invalid order number":
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "invalid order number"})
-		case "order already uploaded by current user":
+		case "order already uploaded by you":
 			c.JSON(http.StatusOK, gin.H{"error": "order already uploaded by you"})
 		case "order already uploaded by another user":
 			c.JSON(http.StatusConflict, gin.H{"error": "order already uploaded by another user"})
