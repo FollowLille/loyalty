@@ -4,9 +4,11 @@ package services
 import (
 	"errors"
 
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/FollowLille/loyalty/internal/auth"
+	"github.com/FollowLille/loyalty/internal/config"
 	"github.com/FollowLille/loyalty/internal/database"
 )
 
@@ -53,15 +55,17 @@ func RegisterUser(username, password string) (string, error) {
 func LoginUser(username, password string) (string, error) {
 	storedHash, err := database.GetUserPasswordHash(username)
 	if err != nil {
+		config.Logger.Error("Failed to get user password hash", zap.Error(err))
 		return "", err
 	}
-
 	if err = bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(password)); err != nil {
+		config.Logger.Error("Failed to compare hash and password", zap.Error(err))
 		return "", errors.New("invalid password")
 	}
 
 	token, err := auth.GenerateToken(username)
 	if err != nil {
+		config.Logger.Error("Failed to generate token", zap.Error(err))
 		return "", errors.New("failed to generate token")
 	}
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/FollowLille/loyalty/internal/config"
 	cstmerr "github.com/FollowLille/loyalty/internal/errors"
@@ -32,14 +31,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		config.Logger.Error("Failed to hash password", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-		return
-	}
-
-	token, err := services.RegisterUser(user.Username, string(hashedPassword))
+	token, err := services.RegisterUser(user.Username, user.Password)
 	if err != nil {
 		if errors.Is(err, cstmerr.ErrorUserAlreadyExists) {
 			config.Logger.Warn("User already exists", zap.String("user", user.Username))
